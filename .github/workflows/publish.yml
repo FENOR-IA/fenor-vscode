@@ -1,0 +1,46 @@
+name: Publicar
+
+# Cria uma tag de versão (ex.: git tag v0.1.0 && git push --tags) para publicar.
+# Secrets: VSCE_PAT (Marketplace do VS Code) e OVSX_PAT (Open VSX). Sem o secret, o destino é pulado.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+      - name: Confere se a tag bate com a versão do package.json
+        run: |
+          VERSION="v$(node -p "require('./package.json').version")"
+          [ "$VERSION" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME diferente da versão $VERSION"; exit 1; }
+
+      - run: npx vsce package -o fenor.vsix
+
+      - name: Marketplace do VS Code
+        if: env.VSCE_PAT != ''
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --packagePath fenor.vsix -p "$VSCE_PAT"
+
+      - name: Open VSX
+        if: env.OVSX_PAT != ''
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: npx --yes ovsx publish fenor.vsix -p "$OVSX_PAT"
+
+      - name: Release no GitHub com o .vsix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" fenor.vsix --title "$GITHUB_REF_NAME" --notes-file CHANGELOG.md

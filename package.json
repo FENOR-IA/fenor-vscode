@@ -1,0 +1,450 @@
+{
+  "name": "fenor",
+  "displayName": "Fenor",
+  "description": "Portfólio de projetos (Java, React, PHP, Node, Python), board do Azure DevOps e fluxo de desenvolvimento com o Copilot, num painel só.",
+  "version": "0.1.0",
+  "publisher": "fenor-ia",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "homepage": "https://github.com/FENOR-IA/fenor-vscode#readme",
+  "bugs": {
+    "url": "https://github.com/FENOR-IA/fenor-vscode/issues"
+  },
+  "galleryBanner": {
+    "color": "#e0702e",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FENOR-IA/fenor-vscode"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other",
+    "AI",
+    "Testing"
+  ],
+  "keywords": [
+    "azure devops",
+    "copilot",
+    "portfolio",
+    "qa",
+    "symfony",
+    "spring",
+    "react"
+  ],
+  "main": "./out/src/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/pom.xml",
+    "workspaceContains:**/build.gradle*",
+    "workspaceContains:**/package.json",
+    "workspaceContains:**/composer.json"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "fenor",
+          "title": "Fenor",
+          "icon": "media/fenor.svg"
+        }
+      ]
+    },
+    "views": {
+      "fenor": [
+        {
+          "id": "fenor.systems",
+          "name": "Sistemas"
+        },
+        {
+          "id": "fenor.portfolio",
+          "name": "Projetos"
+        },
+        {
+          "id": "fenor.board",
+          "name": "Sprint (Azure DevOps)"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "fenor.systems",
+        "contents": "Agrupe os projetos em sistemas (front, back, API…) e gere o vault de cada um.\n[Configurar sistemas](command:fenor.systems.configure)"
+      },
+      {
+        "view": "fenor.board",
+        "contents": "Conecte ao Azure DevOps com seu token pessoal (PAT) para ver o sprint.\n[Conectar Azure DevOps](command:fenor.azure.connect)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "fenor.dashboard.open",
+        "title": "Fenor: Abrir painel",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "fenor.portfolio.refresh",
+        "title": "Fenor: Atualizar projetos",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fenor.board.refresh",
+        "title": "Fenor: Atualizar sprint",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fenor.azure.connect",
+        "title": "Fenor: Conectar Azure DevOps"
+      },
+      {
+        "command": "fenor.azure.disconnect",
+        "title": "Fenor: Desconectar Azure DevOps (apaga o token)"
+      },
+      {
+        "command": "fenor.memory.open",
+        "title": "Fenor: Abrir memória do workspace"
+      },
+      {
+        "command": "fenor.report.situation",
+        "title": "Fenor: Relatório de situação dos projetos",
+        "icon": "$(output)"
+      },
+      {
+        "command": "fenor.ai.ask",
+        "title": "Fenor: Perguntar à IA…",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "fenor.systems.configure",
+        "title": "Fenor: Configurar sistemas (front, back, vault)",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "fenor.vault.generate",
+        "title": "Fenor: Gerar/atualizar vault do sistema",
+        "icon": "$(book)"
+      },
+      {
+        "command": "fenor.kit.apply",
+        "title": "Fenor: Aplicar kit Fenor nos projetos",
+        "icon": "$(verified)"
+      },
+      {
+        "command": "fenor.mode.open",
+        "title": "Fenor: Abrir modo de trabalho (planejar, executar, revisar…)",
+        "icon": "$(play)"
+      },
+      {
+        "command": "fenor.ai.choose",
+        "title": "Fenor: Escolher IA (Copilot, Claude Code, Codex)"
+      },
+      {
+        "command": "fenor.ai.situacao",
+        "title": "Fenor IA: Situação dos projetos"
+      },
+      {
+        "command": "fenor.ai.board",
+        "title": "Fenor IA: Analisar sprint"
+      },
+      {
+        "command": "fenor.ai.planejar",
+        "title": "Fenor IA: Planejar work item"
+      },
+      {
+        "command": "fenor.ai.testes",
+        "title": "Fenor IA: Plano de testes de work item"
+      },
+      {
+        "command": "fenor.ai.revisar",
+        "title": "Fenor IA: Revisar mudanças de um projeto"
+      },
+      {
+        "command": "fenor.ai.portfolio",
+        "title": "Fenor IA: Resumo do portfólio"
+      },
+      {
+        "command": "fenor.copilot.sync",
+        "title": "Fenor: Sincronizar instruções do Copilot (raiz do workspace)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "fenor.ai.ask",
+          "when": "view == fenor.portfolio",
+          "group": "navigation@0"
+        },
+        {
+          "command": "fenor.dashboard.open",
+          "when": "view == fenor.portfolio",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fenor.report.situation",
+          "when": "view == fenor.portfolio",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fenor.portfolio.refresh",
+          "when": "view == fenor.portfolio",
+          "group": "navigation@3"
+        },
+        {
+          "command": "fenor.board.refresh",
+          "when": "view == fenor.board",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fenor.systems.configure",
+          "when": "view == fenor.systems",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fenor.vault.generate",
+          "when": "view == fenor.systems",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "fenor.mode.open",
+          "when": "view == fenor.portfolio && viewItem == fenorProject",
+          "group": "inline@1"
+        },
+        {
+          "command": "fenor.mode.open",
+          "when": "view == fenor.portfolio && viewItem == fenorProject",
+          "group": "fenor@1"
+        },
+        {
+          "command": "fenor.kit.apply",
+          "when": "view == fenor.portfolio && viewItem == fenorProject",
+          "group": "fenor@2"
+        },
+        {
+          "command": "fenor.vault.generate",
+          "when": "view == fenor.systems && viewItem == fenorSystem",
+          "group": "inline@1"
+        },
+        {
+          "command": "fenor.mode.open",
+          "when": "view == fenor.systems && viewItem == fenorProject",
+          "group": "inline@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Fenor",
+      "properties": {
+        "fenor.azure.organization": {
+          "type": "string",
+          "default": "",
+          "description": "Organização do Azure DevOps (o trecho depois de dev.azure.com/)."
+        },
+        "fenor.azure.project": {
+          "type": "string",
+          "default": "",
+          "description": "Projeto do Azure DevOps."
+        },
+        "fenor.azure.team": {
+          "type": "string",
+          "default": "",
+          "description": "Time do Azure DevOps. Vazio usa o time padrão do projeto."
+        },
+        "fenor.ai.provider": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "copilot",
+            "claude",
+            "codex"
+          ],
+          "enumDescriptions": [
+            "Primeira disponível: Copilot, depois Claude Code, depois Codex",
+            "GitHub Copilot (API de modelos do VS Code)",
+            "Claude Code (CLI claude, modo só leitura)",
+            "Codex (CLI codex exec, sandbox só leitura)"
+          ],
+          "default": "auto",
+          "description": "IA usada pelos comandos do Fenor. O @fenor no chat do Copilot usa sempre o Copilot."
+        },
+        "fenor.ai.claudePath": {
+          "type": "string",
+          "default": "",
+          "description": "Caminho do executável claude, se não estiver no PATH."
+        },
+        "fenor.ai.codexPath": {
+          "type": "string",
+          "default": "",
+          "description": "Caminho do executável codex, se não estiver no PATH."
+        },
+        "fenor.scan.maxDepth": {
+          "type": "number",
+          "default": 4,
+          "description": "Profundidade máxima de pastas varridas a partir da raiz do workspace."
+        },
+        "fenor.board.staleDays": {
+          "type": "number",
+          "default": 5,
+          "description": "Dias sem alteração para considerar um item parado."
+        }
+      }
+    },
+    "chatParticipants": [
+      {
+        "id": "fenor.chat",
+        "name": "fenor",
+        "fullName": "Fenor",
+        "description": "Planeja, analisa o sprint e revisa com o contexto dos seus projetos",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "board",
+            "description": "Analisa o sprint atual e sugere como organizar"
+          },
+          {
+            "name": "planejar",
+            "description": "Plano de implementação de um work item (ex.: /planejar 1234)"
+          },
+          {
+            "name": "testes",
+            "description": "Plano de testes de um work item (ex.: /testes 1234)"
+          },
+          {
+            "name": "revisar",
+            "description": "Revisa as mudanças não commitadas de um projeto"
+          },
+          {
+            "name": "portfolio",
+            "description": "Resumo dos projetos do workspace"
+          },
+          {
+            "name": "situacao",
+            "description": "Situação de um projeto (ou de todos) lendo os .md e o git"
+          }
+        ]
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "fenor_contexto",
+        "toolReferenceName": "fenor_contexto",
+        "displayName": "Fenor: contexto do projeto",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(book)",
+        "userDescription": "Lê a memória Fenor do projeto (sessão anterior, próximo passo, armadilhas, regras de negócio)",
+        "modelDescription": "Returns the Fenor project memory: last saved session, next step, blockers, current plan, known pitfalls (gotchas) and business rules. Call this at the START of every task in a project before reading or changing code, so you do not repeat known mistakes.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "projeto": {
+              "type": "string",
+              "description": "Nome ou caminho relativo do projeto (ex.: cartoes/api-cartoes). Opcional se houver arquivo do projeto aberto."
+            }
+          }
+        }
+      },
+      {
+        "name": "fenor_verificar",
+        "toolReferenceName": "fenor_verificar",
+        "displayName": "Fenor: verificar projeto",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(beaker)",
+        "userDescription": "Roda os testes, o build e o lint detectados do projeto",
+        "modelDescription": "Runs the project's own detected verification commands (tests, build, lint) and returns pass/fail with the output tail. You MUST call this before declaring any code change complete; if it fails, fix the problem and call it again. Never claim success while it fails.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "projeto": {
+              "type": "string",
+              "description": "Nome ou caminho relativo do projeto (ex.: cartoes/api-cartoes). Opcional se houver arquivo do projeto aberto."
+            },
+            "etapas": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "test",
+                  "build",
+                  "lint"
+                ]
+              },
+              "description": "Etapas a rodar. Padrão: todas."
+            }
+          }
+        }
+      },
+      {
+        "name": "fenor_salvar_sessao",
+        "toolReferenceName": "fenor_salvar_sessao",
+        "displayName": "Fenor: salvar sessão",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(save)",
+        "userDescription": "Salva a sessão, o próximo passo e os aprendizados na memória do projeto",
+        "modelDescription": "Saves the session into the project's Fenor memory: writes memory/sessions/<date>-<topic>.md, updates memory/progress/next.md and done.md, and appends new lessons to memory/kb/gotchas.md. Call this at the END of a work session.",
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "assunto",
+            "feito",
+            "proximo"
+          ],
+          "properties": {
+            "projeto": {
+              "type": "string",
+              "description": "Nome ou caminho relativo do projeto (ex.: cartoes/api-cartoes). Opcional se houver arquivo do projeto aberto."
+            },
+            "assunto": {
+              "type": "string",
+              "description": "Assunto curto da sessão"
+            },
+            "feito": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "O que foi feito (arquivos, commits)"
+            },
+            "pendente": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "proximo": {
+              "type": "string",
+              "description": "Próximo passo concreto"
+            },
+            "decisoes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "aprendizados": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Armadilhas descobertas: sintoma — causa — como evitar"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "test": "tsc -p . && node --test out/test/*.test.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "@types/vscode": "1.95.0",
+    "@vscode/vsce": "4.0.0",
+    "typescript": "5.9.3"
+  }
+}
