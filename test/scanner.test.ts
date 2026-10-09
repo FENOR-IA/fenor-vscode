@@ -35,15 +35,13 @@ async function makeWorkspace(): Promise<string> {
   return root;
 }
 
-test('encontra projetos Java, Node, PHP e React e ignora node_modules, vendor e pastas só com README', async () => {
+test('encontra só projetos Java e React e ignora node_modules e outras stacks', async () => {
   const root = await makeWorkspace();
 
   const projects = await scanRoot(root);
 
   assert.deepEqual(projects.map((p) => [p.stack, p.name]), [
     ['java', 'api-cartoes'],
-    ['node', 'ferramenta'],
-    ['php', 'backoffice'],
     ['react', 'web'],
   ]);
 });
@@ -66,10 +64,9 @@ test('conta arquivos de teste por convenção de cada stack', async () => {
 
   assert.equal(byStack.java.testCount, 2);
   assert.equal(byStack.react.testCount, 1);
-  assert.equal(byStack.php.testCount, 1);
+
   assert.equal(byStack.react.framework, 'Vite 5.1.0');
-  assert.equal(byStack.php.runtime, 'PHP 8.2');
-  assert.equal(byStack.php.framework, 'Symfony 6.4.*');
+
 });
 
 test('respeita a profundidade máxima', async () => {
@@ -77,7 +74,8 @@ test('respeita a profundidade máxima', async () => {
 
   const projects = await scanRoot(root, 1);
 
-  assert.deepEqual(projects.map((p) => p.name).sort(), ['backoffice', 'ferramenta']);
+  assert.deepEqual(projects.map((p) => p.name), []);
+  assert.deepEqual((await scanRoot(root, 2)).map((p) => p.name).sort(), ['api-cartoes', 'web']);
 });
 
 test('clean remove prefixos de semver', () => {
@@ -99,23 +97,3 @@ test('multi-módulo Maven não conta os testes dos submódulos duas vezes', asyn
   assert.deepEqual(counts, { pai: 1, 'modulo-a': 1 });
 });
 
-test('reconhece app Fenor, PHP puro, Laravel e repositório sem stack', async () => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'fenor-tipos-'));
-  await write(root, 'erp/fenor.json', JSON.stringify({ name: 'erp-florestal', description: 'ERP florestal', version: '1.0.0' }));
-  await write(root, 'erp/CLAUDE.md', '# x');
-  await write(root, 'erp/package.json', JSON.stringify({ name: 'tooling', devDependencies: { tailwindcss: '3' } }));
-  await write(root, 'site-php/index.php', '<?php');
-  await write(root, 'crm/composer.json', JSON.stringify({ require: { php: '^8.1', 'laravel/framework': '^10.0' } }));
-  await write(root, 'docs/.git/HEAD', 'ref: refs/heads/main');
-  await write(root, 'ideias/CLAUDE.md', '# ideias');
-  await write(root, 'CLAUDE.md', '# raiz do workspace não é projeto');
-
-  const projects = await scanRoot(root);
-  const byName = Object.fromEntries(projects.map((p) => [p.name, p]));
-
-  assert.deepEqual(projects.map((p) => `${p.stack}:${p.name}`).sort(), ['outro:docs', 'outro:ideias', 'php:crm', 'php:erp', 'php:site-php']);
-  assert.equal(byName.erp.framework, 'App Fenor');
-  assert.equal(byName.erp.description, 'ERP florestal');
-  assert.equal(byName.crm.framework, 'Laravel 10.0');
-  assert.equal(byName['site-php'].framework, undefined);
-});

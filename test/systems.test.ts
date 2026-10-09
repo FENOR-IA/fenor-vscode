@@ -15,30 +15,28 @@ test('adivinha o papel pela stack e pelo nome', () => {
   assert.equal(guessRole(p('cartoes/web-cartoes', 'react', 'Vite 5')), 'front');
   assert.equal(guessRole(p('cartoes/api-cartoes', 'java', 'Spring Boot 3')), 'api');
   assert.equal(guessRole(p('pix/pix-service', 'java')), 'back');
-  assert.equal(guessRole(p('crm-parceira', 'php', 'App Fenor')), 'fullstack');
-  assert.equal(guessRole(p('cobranca-worker', 'node')), 'worker');
-  assert.equal(guessRole(p('fenor-ia-docs', 'outro')), 'docs');
-  assert.equal(guessRole(p('hagiosapp/api', 'php')), 'api');
-  assert.equal(guessRole(p('banco-ios', 'node')), 'mobile');
+  assert.equal(guessRole(p('cobranca-worker', 'java')), 'worker');
+  assert.equal(guessRole(p('banco-ios', 'react')), 'mobile');
+  assert.equal(guessRole(p('portal-docs', 'react')), 'docs');
 });
 
 test('sugere sistemas por pasta e prefixo, sem mexer nos já configurados', () => {
   const projects = [
-    p('pindurai', 'outro'), p('pindurai-app', 'php', 'App Fenor'),
-    p('arbo/riodosul', 'php'), p('arbo/ellaurel', 'php'),
-    p('cloudw', 'php', 'App Fenor'), p('cloudw/front', 'php'),
-    p('crm-parceira', 'php', 'App Fenor'), p('crm-remate', 'php', 'App Fenor'),
+    p('cartoes/api-cartoes', 'java'), p('cartoes/web-cartoes', 'react'),
+    p('pix-api', 'java'), p('pix-web', 'react'),
+    p('crm-parceira', 'java'), p('crm-remate', 'java'),
+    p('cobranca', 'java'),
   ];
-  const existing = normalizeSystems({ sistemas: [{ name: 'Nuvem', components: [{ project: 'cloudw', role: 'fullstack' }] }] });
+  const existing = normalizeSystems({ sistemas: [{ name: 'Cobrança', components: [{ project: 'cobranca', role: 'back' }] }] });
 
   const result = suggestSystems(projects, existing);
   const byName = Object.fromEntries(result.sistemas.map((s) => [s.name, s.components.map((c) => c.project)]));
 
   assert.deepEqual(byName, {
-    Nuvem: ['cloudw'], Arbo: ['arbo/riodosul', 'arbo/ellaurel'], Cloudw: ['cloudw/front'],
-    'Crm Parceira': ['crm-parceira'], 'Crm Remate': ['crm-remate'], Pindurai: ['pindurai', 'pindurai-app'],
+    'Cobrança': ['cobranca'], Cartoes: ['cartoes/api-cartoes', 'cartoes/web-cartoes'],
+    'Crm Parceira': ['crm-parceira'], 'Crm Remate': ['crm-remate'], Pix: ['pix-api', 'pix-web'],
   });
-  assert.equal(result.sistemas.find((s) => s.name === 'Pindurai')?.vault, 'pindurai-vault');
+  assert.equal(result.sistemas.find((s) => s.name === 'Pix')?.vault, 'pix-vault');
 });
 
 test('normaliza dados do painel: ids únicos, papéis válidos, sem caminhos com ..', () => {

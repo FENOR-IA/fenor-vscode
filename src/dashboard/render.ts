@@ -10,7 +10,7 @@ export interface DashboardData {
 }
 
 const BUCKETS: Array<[StateBucket, string]> = [['todo', 'A fazer'], ['doing', 'Em andamento'], ['done', 'Concluído']];
-const STACK_LABEL: Record<string, string> = { java: 'Java', react: 'React', node: 'Node', php: 'PHP', python: 'Python', outro: 'Outro' };
+const STACK_LABEL: Record<string, string> = { java: 'Java', react: 'React' };
 const MAX_COMMITS = 25;
 
 export function escapeHtml(value: unknown): string {
@@ -40,6 +40,7 @@ export function renderDashboardBody(data: DashboardData): string {
     <div class="actions">
       <button class="primary" data-action="ai-situacao">Situação com IA</button>
       <button data-action="report">Relatório de situação</button>
+      <button data-action="usage">Uso</button>
       <button data-action="refresh">Atualizar</button>
       ${data.board.status === 'desconectado' ? '<button class="primary" data-action="connect">Conectar Azure DevOps</button>' : ''}
     </div>
@@ -48,7 +49,7 @@ export function renderDashboardBody(data: DashboardData): string {
   <section class="kpis">
     ${kpi('Projetos', data.projects.length, stackSummary(data.projects))}
     ${kpi('Ativos', active, `${data.projects.length - active} morno(s) ou parado(s)`)}
-    ${kpi('Arquivos de teste', totalTests, `${data.projects.filter((p) => p.stack !== 'outro' && p.testCount === 0).length} projeto(s) sem teste`)}
+    ${kpi('Arquivos de teste', totalTests, `${data.projects.filter((p) => p.testCount === 0).length} projeto(s) sem teste`)}
     ${kpi('Sprint concluído', items.length ? `${progress}%` : '—', items.length ? `${counts.done} de ${items.length} itens` : boardHint(data.board))}
     ${kpi('Alertas', alerts.length, alerts.length ? 'itens pedindo atenção' : 'nada pendente', alerts.length ? 'warn' : '')}
   </section>
@@ -152,7 +153,7 @@ function projectTable(projects: DashboardData['projects'], now: Date): string {
     <td><span class="tag ${p.stack}">${escapeHtml(STACK_LABEL[p.stack])}</span><small>${escapeHtml([p.framework, p.runtime].filter(Boolean).join(' · '))}</small></td>
     <td><span class="status ${s.activity}">${ACTIVITY_LABEL[s.activity]}</span><small>${escapeHtml(idleLabel(s))}${s.flags.length ? ` · ${escapeHtml(s.flags.join(' · '))}` : ''}</small></td>
     <td>${s.progress !== undefined ? `${s.progress}%<small>${p.docs.checklistOpen} abertos</small>` : '—'}</td>
-    <td class="${p.stack !== 'outro' && !p.testCount ? 'warn-text' : ''}">${p.stack === 'outro' ? '—' : p.testCount}</td>
+    <td class="${!p.testCount ? 'warn-text' : ''}">${p.testCount}</td>
     <td>${p.git.commits[0] ? `${escapeHtml(p.git.commits[0].subject)}<small>${escapeHtml(p.git.commits[0].date.slice(0, 10))} · ${escapeHtml(p.git.branch ?? '')}</small>` : '—'}</td>
   </tr>`).join('')}
   </tbody></table>`;

@@ -105,13 +105,7 @@ export function guessRole(p: Pick<Project, 'name' | 'relPath' | 'stack' | 'frame
   if (/(^|[-_/])(api|gateway)([-_/]|$)/.test(name)) {
     return 'api';
   }
-  if (/App Fenor|Laravel|Symfony/.test(p.framework ?? '') && !/(^|[-_/])(back|api)([-_/]|$)/.test(name)) {
-    return 'fullstack';
-  }
-  if (p.stack === 'java' || p.stack === 'python' || p.stack === 'node' || p.stack === 'php' || /(^|[-_/])(back|server|service|svc)([-_/]|$)/.test(name)) {
-    return 'back';
-  }
-  return 'outro';
+  return 'back';
 }
 
 /**

@@ -54,7 +54,7 @@ test('coleta .md priorizando README/CLAUDE e ignorando sessões antigas', async 
 
 function project(overrides: Partial<ProjectFull>): ProjectFull {
   return {
-    name: 'crm', path: '/w/crm', relPath: 'crm', stack: 'php', buildFile: 'fenor.json', testCount: 0,
+    name: 'crm', path: '/w/crm', relPath: 'crm', stack: 'java', buildFile: 'pom.xml', testCount: 0,
     git: { branch: 'main', dirtyFiles: 2, commits: [{ hash: 'a', author: 'Ana', date: '2026-09-30T10:00:00Z', subject: 'feat: agenda', workItemIds: [] }] },
     docs: { files: [{ relPath: 'memory/plan.md', modified: '2026-08-01T00:00:00Z' }], checklistOpen: 1, checklistDone: 3, pending: [{ text: 'relatório', file: 'memory/plan.md' }] },
     ...overrides,
@@ -81,7 +81,7 @@ test('relatório lista resumo, tabela e pendências com link relativo', () => {
   const md = renderSituationReport([project({ description: 'CRM | parceiros' })], new Date('2026-10-03T12:00:00Z'), '/w/.fenor');
 
   assert.match(md, /\*\*1 ativos\*\*/);
-  assert.match(md, /\| \[crm\]\(#crm\) \| PHP \| Ativo \| há 3 dias \| 75% \(1 abertos\)/);
+  assert.match(md, /\| \[crm\]\(#crm\) \| Java \| Ativo \| há 3 dias \| 75% \(1 abertos\)/);
   assert.match(md, /> CRM \\\| parceiros/);
   assert.match(md, /- relatório — \[memory\/plan\.md\]\(\.\.\/crm\/memory\/plan\.md\)/);
 });

@@ -22,7 +22,6 @@ export interface ProjectFull extends Project {
 const ACTIVE_DAYS = 14;
 const WARM_DAYS = 60;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const STACKS_WITH_TESTS = new Set(['java', 'react', 'node', 'php', 'python']);
 
 export const ACTIVITY_LABEL: Record<Activity, string> = {
   ativo: 'Ativo',
@@ -49,7 +48,7 @@ export function situationOf(p: ProjectFull, now: Date): Situation {
   if (p.git.dirtyFiles) {
     flags.push(`${p.git.dirtyFiles} arquivo(s) sem commit`);
   }
-  if (STACKS_WITH_TESTS.has(p.stack) && p.testCount === 0) {
+  if (p.testCount === 0) {
     flags.push('sem testes');
   }
   if (!p.docs.files.length) {

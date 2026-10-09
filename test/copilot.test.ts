@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { test } from 'node:test';
 import { rootInstructionFile, writeRootInstructions } from '../src/copilot/instructions';
-import { buildKitFiles } from '../src/kit/build';
+import { buildKitFiles, copilotInstructions } from '../src/kit/build';
 import { buildProjectContext, saveSession } from '../src/kit/memoryFiles';
 import { formatVerification, runVerification } from '../src/kit/verify';
 
@@ -56,7 +56,7 @@ test('salvar sessão grava a sessão, o próximo passo, o feito e os aprendizado
 });
 
 test('instruções na raiz aplicam o método só aos arquivos do projeto', async () => {
-  const agents = buildKitFiles({ name: 'api-cartoes', stack: 'java' }, { test: 'mvn test' }, '2026-10-04').find((f) => f.relPath === 'AGENTS.md')?.content ?? '';
+  const agents = copilotInstructions({ name: 'api-cartoes', stack: 'java' }, { test: 'mvn test' });
   const file = rootInstructionFile('cartoes/api-cartoes', 'api-cartoes', agents);
   const root = await tmp();
 

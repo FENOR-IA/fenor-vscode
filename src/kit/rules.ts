@@ -1,11 +1,19 @@
 import { Project } from '../portfolio/scanner';
 
 /**
- * Regras de código por stack, condensadas a partir das regras do ECC (MIT, affaan-m/ECC)
- * e das convenções do Fenor. Ficam em .fenor/regras/ dentro de cada projeto.
+ * Regras de código, condensadas a partir das regras do ECC (MIT, affaan-m/ECC) e das convenções do Fenor.
+ * Viram .github/instructions/*.instructions.md — o Copilot aplica pelo tipo de arquivo (applyTo).
  */
 
-export type RuleId = 'comum' | 'seguranca' | 'testes' | 'java' | 'react' | 'node' | 'php' | 'symfony' | 'laravel' | 'fenor-php74' | 'python';
+export type RuleId = 'comum' | 'seguranca' | 'testes' | 'java' | 'react';
+
+export const RULE_APPLY_TO: Record<RuleId, string> = {
+  comum: '**',
+  seguranca: '**',
+  testes: '**',
+  java: '**/*.java',
+  react: '**/*.{ts,tsx,js,jsx}',
+};
 
 export const RULES: Record<RuleId, string> = {
   comum: `# Regras comuns
@@ -66,85 +74,8 @@ export const RULES: Record<RuleId, string> = {
 - Testes com Testing Library pelo comportamento visível (papel, texto), não por classe CSS.
 - Sem \`console.log\` no commit; trate estados de carregando, vazio e erro em toda tela com dados.
 `,
-  node: `# Regras Node / TypeScript
-
-- Tipos explícitos em funções exportadas; evite \`any\` — use \`unknown\` e estreite.
-- \`async/await\` com \`try/catch\`; nunca deixe promessa sem tratamento.
-- Valide entrada externa com esquema (ex.: Zod).
-- Configuração por variável de ambiente, validada na inicialização.
-`,
-  php: `# Regras PHP
-
-- \`declare(strict_types=1);\` e PSR-12.
-- PDO com prepared statements em toda consulta com dado variável.
-- \`password_hash()\` / \`password_verify()\` para senhas — nunca MD5/SHA1.
-- Escape a saída nos templates (\`htmlspecialchars\` com \`ENT_QUOTES\` e UTF-8).
-- Sem \`var_dump\`, \`print_r\`, \`dd()\` ou \`die()\` no código.
-- Tipos em parâmetros e retornos; exceções em vez de retornos mágicos (\`false\`, \`-1\`).
-`,
-  symfony: `# Regras Symfony
-
-- Serviços com autowiring e injeção por construtor; controllers finos.
-- Validação com o componente Validator (constraints nas DTOs/entidades); formulários com token CSRF.
-- Doctrine: parâmetros nomeados no DQL/QueryBuilder; evite N+1 com \`JOIN\` + \`addSelect\`; paginação.
-- Autorização com Voters e \`#[IsGranted]\`/\`denyAccessUnlessGranted\`.
-- Configuração sensível em variáveis de ambiente / Secrets do Symfony.
-- Testes: PHPUnit com \`KernelTestCase\` / \`WebTestCase\`.
-`,
-  laravel: `# Regras Laravel
-
-- Form Requests para validação; controllers finos; regra de negócio em services/actions.
-- Eloquent: \`with()\` para evitar N+1; nada de \`Model::all()\` sem limite; proteja atribuição em massa (\`$fillable\`).
-- Policies/Gates para autorização. Migrations reversíveis.
-- Testes com \`php artisan test\` (Feature e Unit).
-`,
-  'fenor-php74': `# Regras de app Fenor (PHP 7.4)
-
-O servidor roda PHP 7.4. Escreva código compatível:
-- \`str_starts_with($s, $p)\` → \`strpos($s, $p) === 0\`
-- \`str_ends_with($s, $suf)\` → \`substr($s, -strlen($suf)) === $suf\`
-- \`str_contains($s, $n)\` → \`strpos($s, $n) !== false\`
-- Proibido: enums, propriedades \`readonly\`, \`match()\`, argumentos nomeados, \`func(...)\` como callable, retorno \`never\`.
-- Banco MySQL: \`ON DUPLICATE KEY UPDATE\`, \`AUTO_INCREMENT\`, \`TINYINT(1)\` para booleano. Nada de sintaxe PostgreSQL.
-- Banco isolado por app: nunca acesse o banco de outro app.
-`,
-  python: `# Regras Python
-
-- PEP 8, type hints em funções públicas.
-- Exceções específicas; nunca \`except:\` vazio.
-- Consultas parametrizadas; segredos em variáveis de ambiente.
-- Testes com pytest.
-`,
 };
 
-export function rulesFor(project: Pick<Project, 'stack' | 'framework'>): RuleId[] {
-  const fw = project.framework ?? '';
-  const ids: RuleId[] = ['comum', 'seguranca', 'testes'];
-  switch (project.stack) {
-    case 'java':
-      ids.push('java');
-      break;
-    case 'react':
-      ids.push('react', 'node');
-      break;
-    case 'node':
-      ids.push('node');
-      break;
-    case 'php':
-      ids.push('php');
-      if (/Symfony/.test(fw)) {
-        ids.push('symfony');
-      }
-      if (/Laravel/.test(fw)) {
-        ids.push('laravel');
-      }
-      if (/App Fenor/.test(fw)) {
-        ids.push('fenor-php74');
-      }
-      break;
-    case 'python':
-      ids.push('python');
-      break;
-  }
-  return ids;
+export function rulesFor(project: Pick<Project, 'stack'>): RuleId[] {
+  return ['comum', 'seguranca', 'testes', project.stack];
 }

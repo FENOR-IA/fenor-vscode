@@ -6,8 +6,8 @@ import { Stack } from '../portfolio/scanner';
 import { Activity, ACTIVITY_LABEL, idleLabel, situationOf } from '../portfolio/situation';
 import { FenorState, ProjectWithGit } from '../state';
 
-const STACK_LABEL: Record<Stack, string> = { java: 'Java', react: 'React', node: 'Node', php: 'PHP', python: 'Python', outro: 'Outros' };
-const STACK_ICON: Record<Stack, string> = { java: 'coffee', react: 'symbol-event', node: 'server-process', php: 'symbol-namespace', python: 'symbol-method', outro: 'folder' };
+const STACK_LABEL: Record<Stack, string> = { java: 'Java', react: 'React' };
+const STACK_ICON: Record<Stack, string> = { java: 'coffee', react: 'symbol-event' };
 const ACTIVITY_ICON: Record<Activity, string> = { ativo: 'pass-filled', morno: 'clock', parado: 'debug-pause', 'sem-dados': 'question' };
 const BUCKET_LABEL: Record<StateBucket, string> = { todo: 'A fazer', doing: 'Em andamento', done: 'Concluído' };
 
@@ -80,9 +80,7 @@ function projectDetails(p: ProjectWithGit): PortfolioNode[] {
     { kind: 'info', label: [p.framework, p.runtime].filter(Boolean).join(' · ') || 'stack não identificada', icon: 'tools', description: p.relPath },
     { kind: 'info', label: p.git.branch ?? 'sem git', icon: 'git-branch', description: p.git.dirtyFiles ? `${p.git.dirtyFiles} sem commit` : undefined },
   ];
-  if (p.stack !== 'outro') {
-    nodes.push({ kind: 'info', label: `${p.testCount} arquivo(s) de teste`, icon: p.testCount ? 'beaker' : 'warning' });
-  }
+  nodes.push({ kind: 'info', label: `${p.testCount} arquivo(s) de teste`, icon: p.testCount ? 'beaker' : 'warning' });
   if (last) {
     nodes.push({ kind: 'info', label: last.subject, icon: 'git-commit', description: `${last.author} · ${last.date.slice(0, 10)}` });
   }

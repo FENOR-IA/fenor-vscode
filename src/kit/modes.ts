@@ -1,6 +1,6 @@
 /**
- * Modos de trabalho do método Fenor — o mesmo texto vira comando do Claude Code,
- * prompt do Copilot e instrução para o Codex. Inspirado no fluxo do Fenor Studio
+ * Modos de trabalho do método Fenor — viram os prompts /fenor-<modo> do Copilot.
+ * Inspirados no fluxo do Fenor Studio
  * (planner / executor / reviewer) e nos orquestradores do ECC (MIT, affaan-m/ECC).
  */
 
@@ -21,10 +21,10 @@ const READ_FIRST = `Antes de qualquer coisa, leia nesta ordem (pule o que não e
 3. \`memory/progress/next.md\` e \`memory/plan.md\`
 4. \`memory/kb/gotchas.md\` — erros já cometidos neste projeto: **não repita**
 5. \`memory/kb/domain.md\` — regras de negócio
-6. a seção "Especialistas e práticas (ECC)" do AGENTS.md — agentes e skills da stack deste projeto`;
+No Copilot, **#fenor_contexto** traz tudo isso de uma vez.`;
 
 const VERIFY = `Verificação (obrigatória antes de dizer que terminou): rode os comandos da seção
-"Comandos de verificação" do AGENTS.md. Se algum falhar, corrija e rode de novo. Nunca declare
+"Comandos de verificação" das instruções do projeto — no Copilot, chame **#fenor_verificar**. Se algum falhar, corrija e rode de novo. Nunca declare
 pronto com teste, build ou lint falhando — se não for possível rodar, diga isso explicitamente.`;
 
 export const MODES: Record<ModeId, Mode> = {
@@ -67,7 +67,7 @@ ${READ_FIRST}
 
 Para cada passo do plano:
 1. Escreva ou ajuste o teste que prova o comportamento (deve falhar antes da mudança).
-2. Implemente o mínimo para o teste passar, seguindo as regras em \`.fenor/regras/\`.
+2. Implemente o mínimo para o teste passar, seguindo as instruções do projeto (\`.github/instructions/\`) e as skills da stack.
 3. Rode os testes do projeto. Verde antes de avançar.
 4. Atualize \`memory/progress/done.md\` (o que foi feito) e \`memory/progress/next.md\` (próximo passo).
 5. Decisão relevante? Registre em \`memory/decisions/AAAA-MM-DD-assunto.md\` (contexto, decisão, alternativas).
@@ -76,7 +76,7 @@ ${VERIFY}
 
 Commits: só quando o usuário pedir; mensagem convencional (\`feat:\`, \`fix:\`…) citando \`AB#NNN\` quando houver.
 
-Ao encerrar, siga o modo **Salvar sessão** (\`.fenor/modos/salvar-sessao.md\`).`,
+Ao encerrar, salve a sessão (**#fenor_salvar_sessao** ou \`/fenor-salvar-sessao\`).`,
   },
   revisar: {
     id: 'revisar',
@@ -89,10 +89,10 @@ Você está no **modo Revisar**. NÃO edite código — apenas documente.
 
 ${READ_FIRST}
 
-Use o agente revisor da stack (ex.: \`.claude/agents/java-reviewer.md\`, \`php-reviewer\`, \`react-reviewer\`) junto com \`security-reviewer\`.
+Siga o checklist do agente revisor da stack (\`.github/agents/java-reviewer.agent.md\` ou \`react-reviewer.agent.md\`) e do \`security-reviewer.agent.md\`.
 
 Revise as mudanças atuais (\`git diff\` e arquivos novos) — ou o módulo indicado pelo usuário — contra
-o plano e as regras em \`.fenor/regras/\`. Para cada achado: severidade, arquivo:linha, problema,
+o plano e as instruções do projeto (\`.github/instructions/\`). Para cada achado: severidade, arquivo:linha, problema,
 por que importa, correção sugerida.
 
 Checklist:
@@ -143,7 +143,7 @@ ${READ_FIRST}
    Confirme com o usuário se houver ambiguidade.
 2. **Plano:** escreva \`memory/plan.md\` como no modo Planejar (passos pequenos, arquivos, testes, riscos).
 3. **Testes primeiro:** crie os testes que provam os critérios — devem falhar (skill \`tdd-workflow\` e a de TDD da stack).
-4. **Implementação:** passo a passo até os testes passarem, seguindo \`.fenor/regras/\`.
+4. **Implementação:** passo a passo até os testes passarem, seguindo as instruções do projeto.
 5. **Verificação** (skill \`verification-loop\`): ${VERIFY.replace('Verificação (obrigatória antes de dizer que terminou): ', '')}
 6. **Revisão:** aplique o checklist do modo Revisar nas suas próprias mudanças e corrija CRÍTICO/ALTO.
 7. **Documentação:** atualize \`memory/kb/domain.md\` (regras novas), \`memory/progress/done.md\` e,

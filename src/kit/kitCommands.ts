@@ -1,12 +1,11 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { findCli } from '../ai/cli';
-import { PROVIDER_LABEL, ProviderId, resolveProvider } from '../ai/providers';
 import { bucketOf } from '../azure/analysis';
-import { errorMessage, FenorState, ProjectWithGit } from '../state';
-import { applyKit, planKit, summarize } from './apply';
-import { buildKitFiles } from './build';
 import { rootInstructionFile, writeRootInstructions } from '../copilot/instructions';
+import { errorMessage, FenorState, ProjectWithGit } from '../state';
+import { track } from '../usage/tracker';
+import { applyKit, existingGithubFiles, KitStep, planKit, previewReport, summarize } from './apply';
+import { buildKitFiles, copilotInstructions, kitManifest } from './build';
 import { detectCommands } from './commands';
 import { eccKitFiles, eccSelection } from './ecc';
 import { MODE_ORDER, MODES, ModeId } from './modes';
@@ -18,11 +17,6 @@ export function setEccRoot(dir: string): void {
   eccRoot = dir;
 }
 
-async function kitFilesFor(p: ProjectWithGit, today: string) {
-  const base = buildKitFiles(p, await detectCommands(p), today);
-  return eccRoot ? [...base, ...await eccKitFiles(eccRoot, eccSelection(p))] : base;
-}
-
 type ProjectArg = ProjectWithGit | { project?: ProjectWithGit } | undefined;
 
 function fromArg(arg: ProjectArg): ProjectWithGit | undefined {
@@ -32,7 +26,19 @@ function fromArg(arg: ProjectArg): ProjectWithGit | undefined {
   return 'project' in arg ? arg.project : (arg as ProjectWithGit);
 }
 
-/** Aplica o kit Fenor (memória, modos, regras, instruções para as 3 IAs) nos projetos escolhidos. */
+interface ProjectPlan {
+  project: ProjectWithGit;
+  steps: KitStep[];
+  teamFiles: string[];
+}
+
+async function planFor(p: ProjectWithGit, today: string): Promise<ProjectPlan> {
+  const base = buildKitFiles(p, await detectCommands(p), today);
+  const files = eccRoot ? [...base, ...await eccKitFiles(eccRoot, eccSelection(p))] : base;
+  return { project: p, steps: await planKit(p.path, files, kitManifest(p, today)), teamFiles: await existingGithubFiles(p.path) };
+}
+
+/** Aplica o kit Fenor (instruções, regras, modos, especialistas, memória) nos projetos escolhidos. */
 export async function applyKitCommand(state: FenorState, arg?: ProjectArg): Promise<void> {
   const single = fromArg(arg);
   const targets = single ? [single] : await pickProjects(state);
@@ -40,38 +46,50 @@ export async function applyKitCommand(state: FenorState, arg?: ProjectArg): Prom
     return;
   }
   const today = new Date().toISOString().slice(0, 10);
-  const plans = await Promise.all(targets.map(async (p) => ({
-    project: p,
-    steps: await planKit(p.path, await kitFilesFor(p, today)),
-  })));
-  const totals = plans.reduce((acc, { steps }) => {
-    const s = summarize(steps);
-    return { criar: acc.criar + s.criar, atualizar: acc.atualizar + s.atualizar };
-  }, { criar: 0, atualizar: 0 });
+  const plans = await Promise.all(targets.map((p) => planFor(p, today)));
+  const totals = plans.map((p) => summarize(p.steps)).reduce((acc, s) => ({
+    criar: acc.criar + s.criar, atualizar: acc.atualizar + s.atualizar, conflito: acc.conflito + s.conflito,
+  }), { criar: 0, atualizar: 0, conflito: 0 });
   if (!totals.criar && !totals.atualizar) {
     vscode.window.showInformationMessage('Fenor: o kit já está em dia nesses projetos.');
     return;
   }
-  const detail = plans.map(({ project, steps }) => {
-    const s = summarize(steps);
-    return `${project.relPath}: ${s.criar} novo(s), ${s.atualizar} atualizado(s), ${s.manter} mantido(s)`;
-  }).join('\n');
-  const answer = await vscode.window.showInformationMessage(
-    `Aplicar o kit Fenor em ${targets.length} projeto(s)? ${totals.criar} arquivo(s) novos e ${totals.atualizar} atualizado(s).`,
-    { modal: true, detail: `${detail}\n\nA memória existente nunca é sobrescrita. Em CLAUDE.md, AGENTS.md e copilot-instructions.md o Fenor só mexe no bloco marcado. Os arquivos ficam prontos para commit.` },
-    'Aplicar',
-  );
-  if (answer !== 'Aplicar') {
-    return;
+
+  for (;;) {
+    const answer = await vscode.window.showInformationMessage(
+      `Aplicar o kit Fenor em ${targets.length} projeto(s)? ${totals.criar} arquivo(s) novos, ${totals.atualizar} atualizado(s)${totals.conflito ? `, ${totals.conflito} conflito(s) que serão ignorados` : ''}.`,
+      {
+        modal: true,
+        detail: 'Nada do time é sobrescrito: instruções existentes são preservadas (o Fenor só acrescenta um bloco marcado), arquivos do time com o mesmo nome ficam como conflito e não são tocados, e a memória existente é mantida. Tudo fica no git para você revisar antes do commit.',
+      },
+      'Aplicar', 'Ver detalhes',
+    );
+    if (answer === 'Ver detalhes') {
+      const doc = await vscode.workspace.openTextDocument({
+        language: 'markdown',
+        content: previewReport(plans.map((p) => ({ name: p.project.name, relPath: p.project.relPath, steps: p.steps, teamFiles: p.teamFiles }))),
+      });
+      await vscode.window.showTextDocument(doc, { preview: true });
+      continue;
+    }
+    if (answer !== 'Aplicar') {
+      return;
+    }
+    break;
   }
+
   try {
     let written = 0;
     for (const { project, steps } of plans) {
-      written += await applyKit(project.path, steps);
+      const n = await applyKit(project.path, steps);
+      written += n;
+      track({ tipo: 'kit', projeto: project.relPath, ok: true, detalhe: `${n} arquivo(s)` });
     }
     await state.refreshProjects();
     const synced = await syncCopilotInstructions(state);
-    vscode.window.showInformationMessage(`Fenor: kit aplicado — ${written} arquivo(s) gravados${synced ? `; instruções do Copilot atualizadas na raiz (${synced})` : ''}. Revise e faça o commit em cada projeto.`);
+    vscode.window.showInformationMessage(
+      `Fenor: kit aplicado — ${written} arquivo(s) gravados${totals.conflito ? `, ${totals.conflito} conflito(s) ignorados` : ''}${synced ? `; instruções na raiz do workspace atualizadas (${synced})` : ''}. Revise o diff e faça o commit.`,
+    );
   } catch (err) {
     vscode.window.showErrorMessage(`Fenor: erro ao aplicar o kit — ${errorMessage(err)}`);
   }
@@ -82,14 +100,14 @@ async function pickProjects(state: FenorState): Promise<ProjectWithGit[] | undef
     label: p.name,
     description: p.relPath,
     detail: p.kit?.applied ? `kit aplicado em ${p.kit.appliedAt}` : 'sem kit',
-    picked: !p.kit?.applied && p.stack !== 'outro',
+    picked: !p.kit?.applied,
     project: p,
   }));
   const picked = await vscode.window.showQuickPick(items, { title: 'Aplicar o kit Fenor em quais projetos?', canPickMany: true, matchOnDescription: true });
   return picked?.map((i) => i.project);
 }
 
-/** Abre um modo (planejar, executar…) no projeto, com a IA escolhida. */
+/** Abre um modo (/fenor-planejar, /fenor-executar…) no chat do Copilot para o projeto. */
 export async function openModeCommand(state: FenorState, arg?: ProjectArg, presetMode?: ModeId): Promise<void> {
   const project = fromArg(arg) ?? await pickOne(state);
   if (!project) {
@@ -103,25 +121,28 @@ export async function openModeCommand(state: FenorState, arg?: ProjectArg, prese
     return;
   }
   const mode = presetMode ?? (await vscode.window.showQuickPick(
-    MODE_ORDER.map((id) => ({ label: MODES[id].title, description: MODES[id].description, id })),
+    MODE_ORDER.map((id) => ({ label: `/fenor-${id}`, description: MODES[id].description, id })),
     { title: `Modo de trabalho em ${project.name}` },
   ))?.id;
   if (!mode) {
-    return;
-  }
-  const provider = await pickProvider();
-  if (!provider) {
     return;
   }
   const request = mode === 'salvar-sessao' ? '' : await askRequest(state, mode);
   if (request === undefined) {
     return;
   }
-  try {
-    await launch(state, project, mode, provider, request);
-  } catch (err) {
-    vscode.window.showErrorMessage(`Fenor: ${errorMessage(err)}`);
-  }
+  const m = MODES[mode];
+  const isWorkspaceRoot = state.roots.some((r) => path.resolve(r) === path.resolve(project.path));
+  // Aberto na raiz do projeto, o Copilot já conhece /fenor-<modo>; com a pasta-mãe aberta, anexamos o arquivo do modo.
+  const query = isWorkspaceRoot
+    ? `/fenor-${mode} ${request}`.trim()
+    : [
+      `Siga as instruções de #file:${path.join(project.relPath, '.github', 'prompts', `fenor-${mode}.prompt.md`).split(path.sep).join('/')}.`,
+      `Trabalhe dentro de \`${project.relPath}/\` (os caminhos do modo são relativos a essa pasta; nas ferramentas do Fenor use projeto: "${project.relPath}").`,
+      request ? `Pedido: ${request}` : '',
+    ].filter(Boolean).join(' ');
+  track({ tipo: 'modo', comando: `fenor-${mode}`, projeto: project.relPath });
+  await vscode.commands.executeCommand('workbench.action.chat.open', { query, mode: m.readOnly ? 'ask' : 'agent' });
 }
 
 async function pickOne(state: FenorState): Promise<ProjectWithGit | undefined> {
@@ -132,20 +153,9 @@ async function pickOne(state: FenorState): Promise<ProjectWithGit | undefined> {
   return picked?.project;
 }
 
-async function pickProvider(): Promise<ProviderId | undefined> {
-  const preferred = (await resolveProvider())?.id;
-  const ids: ProviderId[] = ['copilot', 'claude', 'codex'];
-  const picked = await vscode.window.showQuickPick(
-    ids.map((id) => ({ label: PROVIDER_LABEL[id], description: id === preferred ? 'padrão' : '', id }))
-      .sort((a, b) => (a.id === preferred ? -1 : b.id === preferred ? 1 : 0)),
-    { title: 'Com qual IA?' },
-  );
-  return picked?.id;
-}
-
 async function askRequest(state: FenorState, mode: ModeId): Promise<string | undefined> {
   const open = state.board.items.filter((w) => bucketOf(w.state) !== 'done');
-  if (open.length && (mode === 'planejar' || mode === 'feature' || mode === 'corrigir' || mode === 'executar')) {
+  if (open.length && mode !== 'revisar') {
     const picked = await vscode.window.showQuickPick(
       [{ label: '$(edit) Descrever o pedido…', value: '' }, ...open.map((w) => ({ label: `AB#${w.id} · ${w.title}`, description: w.type, value: `AB#${w.id} — ${w.title}` }))],
       { title: 'Qual o pedido?', matchOnDescription: true },
@@ -158,67 +168,23 @@ async function askRequest(state: FenorState, mode: ModeId): Promise<string | und
     }
   }
   return vscode.window.showInputBox({
-    title: MODES[mode].title,
+    title: `/fenor-${mode}`,
     prompt: 'Descreva o pedido (pode deixar em branco para seguir o plano atual)',
     ignoreFocusOut: true,
   });
 }
 
-async function launch(state: FenorState, project: ProjectWithGit, mode: ModeId, provider: ProviderId, request: string): Promise<void> {
-  const m = MODES[mode];
-  const name = `Fenor · ${project.name} · ${m.title} (${PROVIDER_LABEL[provider]})`;
-  if (provider === 'copilot') {
-    const root = state.roots.find((r) => project.path === r || project.path.startsWith(r + path.sep)) ?? project.path;
-    const rel = path.relative(root, project.path) || '.';
-    const modeFile = path.join(rel, '.fenor', 'modos', `${mode}.md`).split(path.sep).join('/');
-    const query = [
-      `Siga as instruções de #file:${modeFile}.`,
-      rel !== '.' ? `Trabalhe dentro da pasta \`${rel}/\`: os caminhos citados no modo são relativos a ela, e o AGENTS.md dela vale aqui.` : '',
-      request ? `Pedido: ${request}` : '',
-    ].filter(Boolean).join(' ');
-    await vscode.commands.executeCommand('workbench.action.chat.open', { query, mode: m.readOnly ? 'ask' : 'agent' });
-    return;
-  }
-  const cli = await findCli(provider, vscode.workspace.getConfiguration('fenor.ai').get<string>(`${provider}Path`, '') || undefined);
-  if (!cli) {
-    throw new Error(`${PROVIDER_LABEL[provider]} não encontrado neste computador.`);
-  }
-  const prompt = provider === 'claude'
-    ? `/fenor-${mode} ${request}`.trim()
-    : `Siga as instruções de .fenor/modos/${mode}.md e o AGENTS.md.${request ? ` Pedido: ${request}` : ''}`;
-  const args = provider === 'claude'
-    ? (m.readOnly ? ['--disallowedTools', 'Bash(git commit*)', 'Bash(git push*)', 'Bash(rm *)'] : [])
-    : (m.readOnly ? ['--sandbox', 'read-only'] : []);
-  const terminal = vscode.window.createTerminal({ name, cwd: project.path });
-  terminal.show();
-  terminal.sendText([cli, ...args, prompt].map(shellQuote).join(' '));
-}
-
-export function shellQuote(value: string): string {
-  if (/^[\w@%+=:,./-]+$/.test(value)) {
-    return value;
-  }
-  if (process.platform === 'win32') {
-    return `"${value.replace(/"/g, '\'')}"`;
-  }
-  return `'${value.replace(/'/g, `'\\''`)}'`;
-}
-
 /**
- * Gera na raiz do workspace as instruções do Copilot de cada projeto com kit (applyTo pelo caminho),
- * para o Copilot seguir o método mesmo com a pasta-mãe de vários repositórios aberta.
+ * O Copilot só lê instruções da raiz do workspace. Com a pasta-mãe de vários repositórios aberta,
+ * gera na raiz uma instrução por projeto, aplicada pelo caminho (applyTo).
  */
 export async function syncCopilotInstructions(state: FenorState): Promise<number> {
   const root = state.roots[0];
   if (!root) {
     return 0;
   }
-  const today = new Date().toISOString().slice(0, 10);
   const files = await Promise.all(state.projects
-    .filter((p) => p.kit?.applied && p.relPath !== '.')
-    .map(async (p) => {
-      const agents = buildKitFiles(p, await detectCommands(p), today).find((f) => f.relPath === 'AGENTS.md');
-      return rootInstructionFile(p.relPath, p.name, agents?.content ?? '');
-    }));
+    .filter((p) => p.kit?.applied && path.resolve(p.path) !== path.resolve(root))
+    .map(async (p) => rootInstructionFile(p.relPath, p.name, copilotInstructions(p, await detectCommands(p)))));
   return writeRootInstructions(root, files);
 }

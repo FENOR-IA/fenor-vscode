@@ -51,7 +51,10 @@ export class DashboardPanel implements vscode.Disposable {
         await Promise.all([this.state.refreshProjects(), this.state.refreshBoard()]);
         return;
       case 'ai-situacao':
-        await vscode.commands.executeCommand('fenor.ai.situacao', '');
+        await vscode.commands.executeCommand('fenor.chat.open', '@fenor /situacao');
+        return;
+      case 'usage':
+        await vscode.commands.executeCommand('fenor.usage.open');
         return;
       case 'report':
         await vscode.commands.executeCommand('fenor.report.situation');

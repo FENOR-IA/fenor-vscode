@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { detectCommands } from '../kit/commands';
 import { errorMessage, FenorState } from '../state';
+import { track } from '../usage/tracker';
 import { resolveVaultPath, SystemDef } from './model';
 import { loadSystems } from './store';
 import { buildVaultFiles, writeVault } from './vault';
@@ -38,6 +39,7 @@ export async function generateVaultCommand(state: FenorState, arg?: string | { s
     }));
     const vaultPath = resolveVaultPath(root, system);
     const result = await writeVault(vaultPath, system, buildVaultFiles(system, comps, new Date()));
+    track({ tipo: 'vault', comando: system.name, ok: true, detalhe: `${result.written} nota(s)` });
     const choice = await vscode.window.showInformationMessage(
       `Fenor: vault de ${system.name} ${result.written ? `atualizado (${result.written} nota(s))` : 'já estava em dia'}${result.createdRepo ? ' — repositório git criado' : ''}.`,
       'Abrir nota do sistema', 'Abrir pasta em nova janela',

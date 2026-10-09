@@ -1,7 +1,7 @@
 {
   "name": "fenor",
   "displayName": "Fenor",
-  "description": "Portfólio de projetos (Java, React, PHP, Node, Python), board do Azure DevOps e fluxo de desenvolvimento com o Copilot, num painel só.",
+  "description": "Método Fenor para o GitHub Copilot em projetos Java (Spring) e React: portfólio, sprint do Azure DevOps, kit de instruções, modos e especialistas, verificação obrigatória e vault.",
   "version": "0.1.0",
   "publisher": "fenor-ia",
   "license": "MIT",
@@ -22,18 +22,19 @@
     "vscode": "^1.95.0"
   },
   "categories": [
-    "Other",
     "AI",
-    "Testing"
+    "Chat",
+    "Testing",
+    "Other"
   ],
   "keywords": [
-    "azure devops",
     "copilot",
-    "portfolio",
-    "qa",
-    "symfony",
-    "spring",
-    "react"
+    "azure devops",
+    "java",
+    "spring boot",
+    "react",
+    "code review",
+    "tdd"
   ],
   "main": "./out/src/extension.js",
   "activationEvents": [
@@ -80,6 +81,11 @@
     ],
     "commands": [
       {
+        "command": "fenor.chat.open",
+        "title": "Fenor: Abrir @fenor no chat do Copilot",
+        "icon": "$(comment-discussion)"
+      },
+      {
         "command": "fenor.dashboard.open",
         "title": "Fenor: Abrir painel",
         "icon": "$(dashboard)"
@@ -112,11 +118,6 @@
         "icon": "$(output)"
       },
       {
-        "command": "fenor.ai.ask",
-        "title": "Fenor: Perguntar à IA…",
-        "icon": "$(sparkle)"
-      },
-      {
         "command": "fenor.systems.configure",
         "title": "Fenor: Configurar sistemas (front, back, vault)",
         "icon": "$(settings-gear)"
@@ -137,42 +138,23 @@
         "icon": "$(play)"
       },
       {
-        "command": "fenor.ai.choose",
-        "title": "Fenor: Escolher IA (Copilot, Claude Code, Codex)"
-      },
-      {
-        "command": "fenor.ai.situacao",
-        "title": "Fenor IA: Situação dos projetos"
-      },
-      {
-        "command": "fenor.ai.board",
-        "title": "Fenor IA: Analisar sprint"
-      },
-      {
-        "command": "fenor.ai.planejar",
-        "title": "Fenor IA: Planejar work item"
-      },
-      {
-        "command": "fenor.ai.testes",
-        "title": "Fenor IA: Plano de testes de work item"
-      },
-      {
-        "command": "fenor.ai.revisar",
-        "title": "Fenor IA: Revisar mudanças de um projeto"
-      },
-      {
-        "command": "fenor.ai.portfolio",
-        "title": "Fenor IA: Resumo do portfólio"
-      },
-      {
         "command": "fenor.copilot.sync",
         "title": "Fenor: Sincronizar instruções do Copilot (raiz do workspace)"
+      },
+      {
+        "command": "fenor.usage.open",
+        "title": "Fenor: Uso e atividade (tokens, onde gastei, o que fiz)",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "fenor.usage.report",
+        "title": "Fenor: Gerar relatório de uso"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "fenor.ai.ask",
+          "command": "fenor.chat.open",
           "when": "view == fenor.portfolio",
           "group": "navigation@0"
         },
@@ -205,6 +187,11 @@
           "command": "fenor.vault.generate",
           "when": "view == fenor.systems",
           "group": "navigation@2"
+        },
+        {
+          "command": "fenor.usage.open",
+          "when": "view == fenor.portfolio",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -252,33 +239,6 @@
           "type": "string",
           "default": "",
           "description": "Time do Azure DevOps. Vazio usa o time padrão do projeto."
-        },
-        "fenor.ai.provider": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "copilot",
-            "claude",
-            "codex"
-          ],
-          "enumDescriptions": [
-            "Primeira disponível: Copilot, depois Claude Code, depois Codex",
-            "GitHub Copilot (API de modelos do VS Code)",
-            "Claude Code (CLI claude, modo só leitura)",
-            "Codex (CLI codex exec, sandbox só leitura)"
-          ],
-          "default": "auto",
-          "description": "IA usada pelos comandos do Fenor. O @fenor no chat do Copilot usa sempre o Copilot."
-        },
-        "fenor.ai.claudePath": {
-          "type": "string",
-          "default": "",
-          "description": "Caminho do executável claude, se não estiver no PATH."
-        },
-        "fenor.ai.codexPath": {
-          "type": "string",
-          "default": "",
-          "description": "Caminho do executável codex, se não estiver no PATH."
         },
         "fenor.scan.maxDepth": {
           "type": "number",

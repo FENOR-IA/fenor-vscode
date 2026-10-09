@@ -1,7 +1,5 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { chooseProvider, createProviderStatus, runTask } from './ai/runner';
-import { TaskKind } from './ai/tasks';
 import { registerChatParticipant } from './chat/participant';
 import { parseAzureInput } from './azure/client';
 import { DashboardPanel } from './dashboard/panel';
@@ -14,16 +12,18 @@ import { generateVaultCommand } from './systems/systemsCommands';
 import { SystemsTree } from './systems/tree';
 import { writeSituationReport } from './reportCommand';
 import { errorMessage, FenorState, PAT_SECRET_KEY } from './state';
+import { UsagePanel, writeUsageReport } from './usage/panel';
+import { setUsageDir } from './usage/tracker';
 import { BoardTree, PortfolioTree } from './views/trees';
 
-const BUILD_FILES_GLOB = '**/{pom.xml,build.gradle,build.gradle.kts,package.json,composer.json}';
+const BUILD_FILES_GLOB = '**/{pom.xml,build.gradle,build.gradle.kts,package.json}';
 const RESCAN_DEBOUNCE_MS = 3000;
-const AI_TASKS: TaskKind[] = ['situacao', 'board', 'planejar', 'testes', 'revisar', 'portfolio'];
 
 export function activate(context: vscode.ExtensionContext): void {
   const output = vscode.window.createOutputChannel('Fenor');
   const state = new FenorState(context.secrets, output);
   setEccRoot(path.join(context.extensionPath, 'ecc'));
+  setUsageDir(context.globalStorageUri.fsPath);
   context.subscriptions.push(output, state);
 
   const systemsTree = new SystemsTree(state);
@@ -47,16 +47,16 @@ export function activate(context: vscode.ExtensionContext): void {
       await state.refreshBoard();
       vscode.window.showInformationMessage('Fenor: token do Azure DevOps apagado.');
     }),
-    vscode.commands.registerCommand('fenor.ai.ask', () => runTask(state)),
+    vscode.commands.registerCommand('fenor.chat.open', (query?: string) => vscode.commands.executeCommand('workbench.action.chat.open', { query: typeof query === 'string' ? query : '@fenor ', mode: 'ask' })),
     vscode.commands.registerCommand('fenor.kit.apply', (arg) => applyKitCommand(state, arg)),
     vscode.commands.registerCommand('fenor.mode.open', (arg) => openModeCommand(state, arg)),
     vscode.commands.registerCommand('fenor.copilot.sync', async () => {
       const n = await syncCopilotInstructions(state);
       vscode.window.showInformationMessage(`Fenor: instruções do Copilot ${n ? `atualizadas (${n})` : 'já em dia'}.`);
     }),
-    vscode.commands.registerCommand('fenor.ai.choose', () => chooseProvider()),
-    ...AI_TASKS.map((kind) => vscode.commands.registerCommand(`fenor.ai.${kind}`, (arg?: string) => runTask(state, kind, typeof arg === 'string' ? arg : undefined))),
     vscode.commands.registerCommand('fenor.report.situation', () => writeSituationReport(state)),
+    vscode.commands.registerCommand('fenor.usage.open', () => UsagePanel.show(state)),
+    vscode.commands.registerCommand('fenor.usage.report', () => writeUsageReport(state, 0)),
     vscode.commands.registerCommand('fenor.memory.open', async () => {
       const root = state.roots[0];
       if (!root) {
@@ -77,7 +77,6 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   watchBuildFiles(context, state);
-  createProviderStatus(context);
   registerCopilotTools(context, state);
 
   if (typeof vscode.chat?.createChatParticipant === 'function') {

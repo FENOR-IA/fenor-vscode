@@ -5,13 +5,13 @@ import { analyzeSprint, loadByMember } from '../azure/analysis';
 import { WorkItem } from '../azure/client';
 import {
   boardPrompt, memoryContext, planPrompt, portfolioPrompt, projectsContext, reviewPrompt, situationPrompt, SituationInput, SYSTEM_RULES, testPlanPrompt,
-} from '../chat/prompts';
+} from './prompts';
 import { readMemory } from '../memory';
 import { getWorkingDiff } from '../portfolio/git';
 import { ACTIVITY_LABEL, idleLabel, situationOf } from '../portfolio/situation';
 import { FenorState, ProjectWithGit } from '../state';
 
-/** Tarefas do Fenor — as mesmas para Copilot, Claude Code e Codex. */
+/** Tarefas do @fenor no chat do Copilot. */
 
 export type TaskKind = 'situacao' | 'board' | 'planejar' | 'testes' | 'revisar' | 'portfolio' | 'livre';
 

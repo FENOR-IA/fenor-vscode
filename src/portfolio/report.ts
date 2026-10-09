@@ -1,9 +1,7 @@
 import * as path from 'path';
 import { ACTIVITY_LABEL, Activity, idleLabel, ProjectFull, situationOf } from './situation';
 
-const STACK_LABEL: Record<string, string> = {
-  java: 'Java', react: 'React', node: 'Node', php: 'PHP', python: 'Python', outro: 'Outro',
-};
+const STACK_LABEL: Record<string, string> = { java: 'Java', react: 'React' };
 const ACTIVITY_ORDER: Activity[] = ['ativo', 'morno', 'parado', 'sem-dados'];
 const MAX_PENDING_IN_REPORT = 6;
 

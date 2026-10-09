@@ -1,16 +1,16 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { PROVIDERS } from '../ai/providers';
-import { buildSystemContext, buildTask, TaskKind } from '../ai/tasks';
 import { errorMessage, FenorState } from '../state';
+import { track } from '../usage/tracker';
+import { buildSystemContext, buildTask, TaskKind } from './tasks';
 
 const COMMANDS = new Set<TaskKind>(['situacao', 'board', 'planejar', 'testes', 'revisar', 'portfolio']);
 
-/** @fenor no chat do Copilot — usa as mesmas tarefas dos comandos, com o modelo escolhido no chat. */
+/** @fenor no chat do Copilot, com o modelo escolhido no próprio chat. */
 export function registerChatParticipant(context: vscode.ExtensionContext, state: FenorState): void {
   const participant = vscode.chat.createChatParticipant('fenor.chat', (request, _ctx, stream, token) =>
     handle(state, request, stream, token));
-  participant.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'media', 'fenor.svg'));
+  participant.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'media', 'icon.png'));
   context.subscriptions.push(participant);
 }
 
@@ -29,17 +29,42 @@ async function handle(
     if (!task) {
       return {};
     }
-    await PROVIDERS.copilot.run({
-      system: await buildSystemContext(state),
-      task,
-      cwd: state.roots[0] ?? process.cwd(),
-      token,
-      onText: (t) => stream.markdown(t),
-      copilotModel: request.model,
+    const system = await buildSystemContext(state);
+    const messages = [vscode.LanguageModelChatMessage.User(system), vscode.LanguageModelChatMessage.User(task)];
+    const started = Date.now();
+    const response = await request.model.sendRequest(messages, {}, token);
+    let output = '';
+    for await (const chunk of response.text) {
+      output += chunk;
+      stream.markdown(chunk);
+    }
+    track({
+      tipo: 'chat',
+      comando: kind,
+      projeto: projectHint(state, request.prompt),
+      modelo: request.model.name || request.model.id,
+      tokensEntrada: await countTokens(request.model, `${system}\n${task}`, token),
+      tokensSaida: await countTokens(request.model, output, token),
+      duracaoMs: Date.now() - started,
+      ok: true,
     });
     return {};
   } catch (err) {
     stream.markdown(`Erro: ${errorMessage(err)}`);
     return { errorDetails: { message: errorMessage(err) } };
   }
+}
+
+async function countTokens(model: vscode.LanguageModelChat, text: string, token: vscode.CancellationToken): Promise<number> {
+  try {
+    return await model.countTokens(text, token);
+  } catch {
+    return Math.ceil(text.length / 4); // estimativa grosseira quando o modelo não conta
+  }
+}
+
+/** Projeto citado no pedido (nome ou caminho), para atribuir o consumo. */
+function projectHint(state: FenorState, prompt: string): string | undefined {
+  const text = prompt.toLowerCase();
+  return state.projects.find((p) => text.includes(p.relPath.toLowerCase()) || text.includes(p.name.toLowerCase()))?.relPath;
 }
