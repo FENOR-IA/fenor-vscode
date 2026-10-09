@@ -52,7 +52,7 @@ export function registerCopilotTools(context: vscode.ExtensionContext, state: Fe
           const started = Date.now();
           const results = await runVerification(project.path, await detectCommands(project), pickSteps(options.input.etapas), controller.signal);
           const ran = results.filter((r) => !r.skipped);
-          track({ tipo: 'verificacao', comando: 'fenor_verificar', projeto: project.relPath, ok: ran.length > 0 && ran.every((r) => r.ok), duracaoMs: Date.now() - started, detalhe: ran.map((r) => `${r.step}:${r.ok ? 'ok' : 'falhou'}`).join(' ') });
+          track({ tipo: 'verificacao', comando: 'fenor_verificar', projeto: project.relPath, ok: ran.length ? ran.every((r) => r.ok) : undefined, duracaoMs: Date.now() - started, detalhe: ran.map((r) => `${r.step}:${r.ok ? 'ok' : 'falhou'}`).join(' ') });
           return text(formatVerification(project.name, results));
         } finally {
           sub.dispose();

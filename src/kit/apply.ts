@@ -129,8 +129,11 @@ const ACTION_LABEL: Record<KitAction, string> = {
 };
 
 /** Pré-visualização em Markdown: o que acontece com cada arquivo e o que o time já tem. */
-export function previewReport(projects: ReadonlyArray<{ name: string; relPath: string; steps: readonly KitStep[]; teamFiles: readonly string[] }>): string {
-  const lines = ['# Pré-visualização do kit Fenor', '', 'Nada foi gravado ainda. Revise e confirme na janela do VS Code.', ''];
+export function previewReport(
+  projects: ReadonlyArray<{ name: string; relPath: string; steps: readonly KitStep[]; teamFiles: readonly string[] }>,
+  howToConfirm = 'Revise e confirme na janela do VS Code.',
+): string {
+  const lines = ['# Pré-visualização do kit Fenor', '', `Nada foi gravado ainda. ${howToConfirm}`, ''];
   for (const p of projects) {
     const s = summarize(p.steps);
     const ours = new Set(p.steps.map((st) => st.file.relPath));

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — 2026-10-09
+
+IntelliJ e terminal.
+
+- **Servidor MCP do Fenor** (`fenor-cli.zip`): `fenor_projetos`, `fenor_contexto`, `fenor_verificar`, `fenor_salvar_sessao` e `fenor_situacao` no Copilot do IntelliJ (e de qualquer IDE com MCP). Sem dependências; detecta a pasta aberta na IDE.
+- **Comando `fenor`** no terminal: `projetos`, `kit [--aplicar]`, `situacao`, `uso --dias N` e `intellij` (configuração pronta para colar no Copilot).
+- **Painel de Uso** soma também o uso registrado pelo MCP (`~/.fenor/`).
+- Verificação sem comandos detectados não conta mais como reprovada.
+
 ## 0.1.0 — 2026-10-09
 
 Primeira versão: o método Fenor dentro do GitHub Copilot, para projetos Java (Spring) e React.

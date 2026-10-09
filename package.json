@@ -2,7 +2,7 @@
   "name": "fenor",
   "displayName": "Fenor",
   "description": "Método Fenor para o GitHub Copilot em projetos Java (Spring) e React: portfólio, sprint do Azure DevOps, kit de instruções, modos e especialistas, verificação obrigatória e vault.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "fenor-ia",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -399,12 +399,17 @@
     "compile": "tsc -p .",
     "watch": "tsc -watch -p .",
     "test": "tsc -p . && node --test out/test/*.test.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "build:cli": "node scripts/build-cli.js"
   },
   "devDependencies": {
     "@types/node": "20.19.43",
     "@types/vscode": "1.95.0",
     "@vscode/vsce": "4.0.0",
+    "esbuild": "0.28.2",
     "typescript": "5.9.3"
+  },
+  "bin": {
+    "fenor": "dist/fenor.js"
   }
 }

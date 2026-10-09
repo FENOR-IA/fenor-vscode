@@ -7,6 +7,7 @@ import { projectActivity } from './activity';
 import { eventsToCsv, readEvents, summarizeUsage } from './log';
 import { renderUsageBody, UsageView } from './render';
 import { renderUsageReport } from './report';
+import { USAGE_DIR as MCP_USAGE_DIR } from '../cli/mcp';
 import { getUsageDir, track } from './tracker';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -44,8 +45,7 @@ export class UsagePanel implements vscode.Disposable {
     const to = new Date();
     const from = new Date(to.getTime() - (periodDays - 1) * DAY_MS);
     from.setHours(0, 0, 0, 0);
-    const dir = getUsageDir();
-    const events = dir ? await readEvents(dir, from, to) : [];
+    const events = await readAllEvents(from, to);
     if (!state.projects.length) {
       await state.refreshProjects();
     }
@@ -119,10 +119,9 @@ export async function writeUsageReport(state: FenorState, periodDays = 30): Prom
 }
 
 async function exportCsv(periodDays: number): Promise<void> {
-  const dir = getUsageDir();
   const to = new Date();
   const from = new Date(to.getTime() - (periodDays - 1) * DAY_MS);
-  const events = dir ? await readEvents(dir, from, to) : [];
+  const events = await readAllEvents(from, to);
   const target = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(`fenor-uso-${to.toISOString().slice(0, 10)}.csv`), filters: { CSV: ['csv'] } });
   if (!target) {
     return;
@@ -171,3 +170,10 @@ code { font-family: var(--vscode-editor-font-family); font-size: 11px; color: va
 .empty { color: var(--muted); font-size: 12px; margin: 0; }
 .note { color: var(--muted); font-size: 11px; line-height: 1.5; max-width: 860px; }
 `;
+
+/** Uso registrado pela extensão (globalStorage) e pelo servidor MCP / comando fenor (~/.fenor), em ordem. */
+async function readAllEvents(from: Date, to: Date) {
+  const dirs = [getUsageDir(), MCP_USAGE_DIR].filter((d): d is string => Boolean(d));
+  const all = (await Promise.all(dirs.map((d) => readEvents(d, from, to)))).flat();
+  return all.sort((a, b) => a.ts.localeCompare(b.ts));
+}

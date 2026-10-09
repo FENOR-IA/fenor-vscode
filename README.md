@@ -41,6 +41,26 @@ Tudo no formato nativo do Copilot, pronto para commit:
 | `#fenor_verificar` | Roda os testes, o build e o lint **detectados pelo Fenor** e reprova se algo falhar |
 | `#fenor_salvar_sessao` | Salva a sessão, o próximo passo e os aprendizados |
 
+## IntelliJ (e outras IDEs com Copilot)
+
+O kit é o mesmo: o Copilot do IntelliJ lê `.github/copilot-instructions.md`, as instruções, os prompts `/fenor-…`, os agentes e as skills (em prévia no IntelliJ). As ferramentas do Fenor chegam lá por **MCP**:
+
+1. Baixe o `fenor-cli.zip` do [Release](https://github.com/FENOR-IA/fenor-vscode/releases) e descompacte (precisa de Node 18+).
+2. Rode `node fenor.js intellij` e cole a configuração em **Settings → Tools → GitHub Copilot → Model Context Protocol (MCP)**.
+3. No chat do Copilot (modo agente) aparecem `fenor_contexto`, `fenor_verificar`, `fenor_salvar_sessao`, `fenor_situacao` e `fenor_projetos`.
+
+O mesmo `fenor.js` funciona no terminal:
+
+```bash
+node fenor.js projetos                # projetos Java e React da pasta
+node fenor.js kit api-cartoes          # pré-visualização do kit
+node fenor.js kit api-cartoes --aplicar
+node fenor.js situacao                # .fenor/situacao.md
+node fenor.js uso --dias 30           # relatório de uso e do que você fez
+```
+
+O uso registrado pelo MCP fica em `~/.fenor/` e também aparece no painel de Uso do VS Code.
+
 ## Azure DevOps
 
 **Fenor: Conectar Azure DevOps** → URL do projeto (`https://dev.azure.com/org/Projeto`) e um token pessoal com **Work Items: Read**. O token fica no cofre do VS Code.

@@ -32,6 +32,9 @@ jobs:
 
       - run: npx vsce package -o fenor.vsix
 
+      - name: Pacote do terminal / MCP (IntelliJ)
+        run: npm run build:cli && (cd dist && zip -qr ../fenor-cli.zip .)
+
       - name: Marketplace do VS Code
         if: env.VSCE_PAT != ''
         run: npx vsce publish --packagePath fenor.vsix -p "$VSCE_PAT"
@@ -40,7 +43,7 @@ jobs:
         if: env.OVSX_PAT != ''
         run: npx --yes ovsx publish fenor.vsix -p "$OVSX_PAT"
 
-      - name: Release no GitHub com o .vsix
+      - name: Release no GitHub com o .vsix e o fenor-cli.zip
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" fenor.vsix --title "$GITHUB_REF_NAME" --notes-file CHANGELOG.md
+        run: gh release create "$GITHUB_REF_NAME" fenor.vsix fenor-cli.zip --title "$GITHUB_REF_NAME" --notes-file CHANGELOG.md
